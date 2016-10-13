@@ -1,0 +1,28 @@
+{
+  "name": "svg-extras",
+  "description": "Extends basic svg figures",
+  "main": [
+    "dist/svg-extras.min.js",
+    "dist/svg-extras.min.css"
+  ],
+  "moduleType": "globals",
+  "license": "MIT",
+  "keywords": [
+    "SVG",
+    "rectangle",
+    "polygon",
+    "resizable",
+    "figure",
+    "shape",
+    "drag",
+    "drop"
+  ],
+  "authors": [
+    "Roman Mishchenko <mishchenkoroman95@gmail.com>"
+  ],
+  "homepage": "https://github.com/HaturiHanzo/bower-svg-extras",
+  "repository": "https://github.com/HaturiHanzo/bower-svg-extras.git",
+  "dependencies": {
+    "inherit": "dfilatov/inherit#2.2.4"
+  }
+}
