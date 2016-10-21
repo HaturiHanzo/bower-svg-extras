@@ -2,8 +2,8 @@
   "name": "svg-extras",
   "description": "Extends basic svg figures",
   "main": [
-    "dist/svg-extras.min.js",
-    "dist/svg-extras.min.css"
+    "dist/svg-extras.js",
+    "dist/svg-extras.css"
   ],
   "moduleType": "globals",
   "license": "MIT",
