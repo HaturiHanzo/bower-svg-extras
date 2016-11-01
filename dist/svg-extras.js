@@ -1,11 +1,10 @@
-/* jshint -W098 */
-/* jshint -W079 */
-var svgext = (function () {
+window.svgext = (function () {
     'use strict';
 
     if (!inherit) {
         throw new Error('Svg-extras requires https://github.com/dfilatov/inherit');
     }
+
     var isTouchDevice = 'ontouchstart' in document.documentElement;
 
     return {
@@ -45,11 +44,15 @@ var svgext = (function () {
                 domNode.removeEventListener(type, handler);
             };
         },
+
         default: {
-            vertexWidth: isTouchDevice ? 20 : 12,
-            vertexHeight: isTouchDevice ? 20 : 12,
-            borderOffset: isTouchDevice ? 16 : 14,
-            polygonAddPointDist: isTouchDevice ? 20 : 0
+            control: {
+                width: 12,
+                height: 12
+            },
+            borderedRect: {
+                borderOffset: 14
+            }
         }
     };
 }());
@@ -376,6 +379,14 @@ var svgext = (function () {
          * @returns {SVGBlock}
          */
         remove: function (svgElem) {
+            if (!svgElem) {
+                return;
+            }
+
+            if (svgElem.isActive && this.deactivateActiveElement) {
+                this.deactivateActiveElement();
+            }
+
             this.children.splice(this.children.indexOf(svgElem), 1);
             this.removeElem(svgElem.rootNode);
             svgElem.destroy();
@@ -511,6 +522,8 @@ var svgext = (function () {
 
             if (data.changedTouches) {
                 event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
                 data = event.changedTouches[0];
             }
             if (!this._lastClientCoords) {
@@ -1112,6 +1125,10 @@ var svgext = (function () {
         __constructor: function (opts) {
             opts = opts ? opts : {isDraggable: true};
             this.__base(opts);
+
+            if (svgext._isTouchDevice) {
+                this.addClass('svg-control_type_touch');
+            }
         },
 
         /**
@@ -1436,7 +1453,6 @@ var svgext = (function () {
             this.render();
         },
 
-
         /**
          * Activates polygon
          *
@@ -1471,8 +1487,8 @@ var svgext = (function () {
          */
         _createVertex: function (point) {
             var vertex = new svgext.SVGPolygonVertex({
-                    width: svgext.default.vertexWidth,
-                    height: svgext.default.vertexHeight,
+                    width: svgext.default.control.width,
+                    height: svgext.default.control.height,
                     x: point[0],
                     y: point[1],
                     cssClass: 'svg-polygon-vertex'
@@ -1503,30 +1519,13 @@ var svgext = (function () {
                 return;
             }
 
-            var removedNearPoint,
-                containerRect = this.getContainerRect(),
+            var containerRect = this.getContainerRect(),
                 point = svgext._isTouchDevice ? [
                     event.changedTouches[0].clientX - containerRect.left,
                     event.changedTouches[0].clientY - containerRect.top
                 ] : [
                     event.offsetX, event.offsetY
                 ];
-
-            removedNearPoint = this.vertexes.some(function (vertex) {
-                var dist = svgext.CartesianGeometryMath.distanceBtwTwoPoints([
-                    vertex.getX() + vertex.width() / 2,
-                    vertex.getY() + vertex.height() / 2
-                ], point);
-                if (dist < svgext.default.polygonAddPointDist) {
-                    this._removeVertex(vertex);
-
-                    return true;
-                }
-            }, this);
-
-            if (removedNearPoint) {
-                return;
-            }
 
             this.addPoint(point);
         }
@@ -1571,6 +1570,10 @@ var svgext = (function () {
             this.__base(opts);
             this.type = opts.type;
             this.addClass('svg-rectangle-control_type_' + this.type);
+
+            if (svgext._isTouchDevice) {
+                this.addClass('svg-control_type_touch');
+            }
         },
 
         /**
@@ -1665,18 +1668,18 @@ var svgext = (function () {
             if (type === 'vertical') {
                 // Finds vertical point index with the smallest Y value
                 smallestPointIndex = points[0].getY() >= points[1].getY() ? 1 : 0;
-                this.setY((svgext.default.vertexHeight / 2) + points[smallestPointIndex].getY());
+                this.setY((svgext.default.control.height / 2) + points[smallestPointIndex].getY());
                 this.height(points[smallestPointIndex ? 0 : 1].getY() - points[smallestPointIndex].getY());
-                var hPointsY = this.getY() + (this.height() / 2) - svgext.default.vertexHeight / 2;
+                var hPointsY = this.getY() + (this.height() / 2) - svgext.default.control.height / 2;
                 [points[2], points[3]].forEach(function (hPoint) {
                     hPoint.setY(hPointsY);
                 });
             } else {
                 // Finds vertical point index with the smallest X value
                 smallestPointIndex = points[2].getX() >= points[3].getX() ? 3 : 2;
-                this.setX((svgext.default.vertexWidth / 2) + points[smallestPointIndex].getX());
+                this.setX((svgext.default.control.width / 2) + points[smallestPointIndex].getX());
                 this.width(points[smallestPointIndex === 3 ? 2 : 3].getX() - points[smallestPointIndex].getX());
-                var vPointsX = this.getX() + (this.width() / 2) - svgext.default.vertexWidth / 2;
+                var vPointsX = this.getX() + (this.width() / 2) - svgext.default.control.width / 2;
                 [points[0], points[1]].forEach(function (vPoint) {
                     vPoint.setX(vPointsX);
                 });
@@ -1776,11 +1779,11 @@ var svgext = (function () {
                 return;
             }
             this.controls = [];
-            var halfControlWidth = svgext.default.vertexWidth / 2,
-                halfControlHeight = svgext.default.vertexHeight / 2,
+            var halfControlWidth = svgext.default.control.width / 2,
+                halfControlHeight = svgext.default.control.height / 2,
                 controlOpts = {
-                    width: svgext.default.vertexWidth,
-                    height: svgext.default.vertexHeight,
+                    width: svgext.default.control.width,
+                    height: svgext.default.control.height,
                     cssClass: 'svg-rectangle-control'
                 };
             // Top
@@ -1850,14 +1853,16 @@ var svgext = (function () {
          * @param {axis} [axis] Changed axis
          */
         render: function (axis) {
+            var offset = svgext.default.borderedRect.borderOffset;
+
             if (axis !== 'x') {
-                this.attr('y', this.container.getY() - svgext.default.borderOffset)
-                    .attr('height', this.container.height() + 2 * svgext.default.borderOffset);
+                this.attr('y', this.container.getY() - offset)
+                    .attr('height', this.container.height() + 2 * offset);
             }
 
             if (axis !== 'y') {
-                this.attr('x', this.container.getX() - svgext.default.borderOffset)
-                    .attr('width', this.container.width() + 2 * svgext.default.borderOffset);
+                this.attr('x', this.container.getX() - offset)
+                    .attr('width', this.container.width() + 2 * offset);
             }
         }
     });
@@ -1883,9 +1888,13 @@ var svgext = (function () {
             this.__base({
                 cssClass: 'svg-border-control',
                 isDraggable: true,
-                width: svgext.default.vertexWidth,
-                height: svgext.default.vertexHeight
+                width: svgext.default.control.width,
+                height: svgext.default.control.height
             });
+
+            if (svgext._isTouchDevice) {
+                this.addClass('svg-control_type_touch');
+            }
         },
 
         /**
@@ -1938,14 +1947,15 @@ var svgext = (function () {
          * @param {axis} [axis] Changed axis
          */
         render: function (axis) {
-            var rect = this.container;
+            var rect = this.container,
+                offset = svgext.default.borderedRect.borderOffset;
 
             if (axis !== 'x') {
-                this.setY(rect.getY() + rect.height() + svgext.default.borderOffset - svgext.default.vertexHeight / 2);
+                this.setY(rect.getY() + rect.height() + offset - svgext.default.control.height / 2);
             }
 
             if (axis !== 'y') {
-                this.setX(rect.getX() + rect.width() + svgext.default.borderOffset - svgext.default.vertexWidth / 2);
+                this.setX(rect.getX() + rect.width() + offset - svgext.default.control.width / 2);
             }
         }
     });
