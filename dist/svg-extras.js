@@ -1,4 +1,4 @@
-window.svgext = (function () {
+(function (global) {
     'use strict';
 
     if (!inherit) {
@@ -7,7 +7,17 @@ window.svgext = (function () {
 
     var isTouchDevice = 'ontouchstart' in document.documentElement;
 
-    return {
+    /**
+     * svgext namespace
+     * @namespace svgext
+     */
+    global.svgext = {
+        /**
+         * Touch device flag
+         *
+         * @type {Boolean}
+         * @private
+         */
         _isTouchDevice: isTouchDevice,
 
         /**
@@ -45,6 +55,14 @@ window.svgext = (function () {
             };
         },
 
+        /**
+         * Defines default svgext settings structure
+         *
+         * @name svgext.default
+         * @prop {resolution} control
+         * @prop {Object} borderedRect
+         * @prop {Number} borderedRect.borderOffset
+         */
         default: {
             control: {
                 width: 12,
@@ -55,30 +73,33 @@ window.svgext = (function () {
             }
         }
     };
-}());
-
-/**
- * Defines SVGElement abstract class
- *
- * @name SVGElement
- */
+}(window));
 
 (function (svgext) {
     'use strict';
 
-    svgext.SVGElement = inherit({
+    svgext.SVGElement = inherit(/** @lends svgext.SVGElement.prototype  */ {
 
+        /**
+         * SVG namespace
+         *
+         * @constant
+         * @type {String}
+         * @default http://www.w3.org/2000/svg
+         */
         NS: 'http://www.w3.org/2000/svg',
 
         /**
-         * Creates new SVGElement instance
+         * Creates svgext.SVGElement instance
          *
+         * @abstract
+         * @constructs svgext.SVGElement
+         * @classdesc Abstract class provides basic functionality for svg elements
          * @param {Object} [opts]
          * @param {Boolean} [opts.isDraggable=true]
          * @param {Boolean} [opts.backgroundColor=#00d]
          * @param {Boolean} [opts.cssClass]
          * @param {String|SVGSVGElement} tag
-         * @constructor
          */
         __constructor: function (opts, tag) {
             this.rootNode = this.node = typeof tag === 'string' ? this.createElem(tag) : tag;
@@ -167,7 +188,7 @@ window.svgext = (function () {
          * SVGElement node attributes setter & getter
          *
          * @param {String} key
-         * @param {String} value
+         * @param {String} [value]
          * @returns {SVGElement}
          */
         attr: function (key, value) {
@@ -327,21 +348,21 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines SVGBlock class
- *
- * @name SVGBlock
- */
-
 (function (svgext) {
     'use strict';
 
+    /**
+     * Wraps an element in a g element and adds special methods to control children
+     *
+     * @mixin svgext.SVGBlock
+     */
     svgext.SVGBlock = {
 
         /**
-         * SVGBlock class constructor
+         * SVGBlock mixin constructor proxy
          *
-         * @constructor
+         * @override
+         * @ignore
          */
         __constructor: function () {
             this.__base.apply(this, arguments);
@@ -429,20 +450,20 @@ window.svgext = (function () {
     };
 }(svgext));
 
-/**
- * Defines SVGDraggable class
- *
- * @name SVGDraggable
- */
 (function (svgext) {
     'use strict';
 
+    /**
+     * Makes an element draggable
+     *
+     * @mixin svgext.SVGDraggable
+     */
     svgext.SVGDraggable = {
         /**
-         * SVGDraggable class constructor
+         * SVGDraggable mixin constructor proxy
          *
-         * @param {*} opts
-         * @constructor
+         * @override
+         * @ignore
          */
         __constructor: function (opts) {
             this.__base.apply(this, arguments);
@@ -543,6 +564,7 @@ window.svgext = (function () {
          * @param {Object} data Mousemove event
          * @param {Number} data.clientX
          * @param {Number} data.clientY
+         * @private
          */
         _saveClientCoords: function (data) {
             this._lastClientCoords = {
@@ -586,24 +608,21 @@ window.svgext = (function () {
     };
 }(svgext));
 
-/**
- * Defines Svg container class
- *
- * @name SVGContainer
- */
-
 (function (svgext) {
     'use strict';
 
-    svgext.SVGContainer = inherit([svgext.SVGElement, svgext.SVGBlock], {
+    svgext.SVGContainer = inherit([svgext.SVGElement, svgext.SVGBlock], /** @lends svgext.SVGContainer.prototype  */ {
 
         /**
-         * SVGContainer class constructor
+         * Creates svgext.SVGContainer instance
          *
+         * @constructs svgext.SVGContainer
+         * @classdesc Root svg element class
+         * @augments svgext.SVGElement
+         * @mixes svgext.SVGBlock
          * @param {Object} [opts]
          * @param {String} [opts.cssClass]
          * @param {SVGSVGElement} [opts.node] existing svg element
-         * @constructor
          */
         __constructor: function (opts) {
             opts = opts || {};
@@ -617,7 +636,7 @@ window.svgext = (function () {
          * Instances getter
          *
          * @param {SVGElement} [elemClass]
-         * @returns {[SVGElement]}
+         * @returns {Array.<SVGElement>}
          */
         getInstances: function (elemClass) {
             return elemClass ? this._filterChildren(elemClass) : this.children;
@@ -728,7 +747,7 @@ window.svgext = (function () {
          *
          * @param {instance} elemClass
          * @private
-         * @returns {[SVGElement]}
+         * @returns {Array.<SVGElement>}
          */
         _filterChildren: function (elemClass) {
             return this.children.filter(function (child) {
@@ -776,41 +795,46 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines SVGRect class
- *
- * @name SVGRect
- */
-
-/**
- * Defines rectangle constructor options
- *
- * @typedef {Object} rectOpts
- * @prop {Number} x
- * @prop {Number} y
- * @prop {Number} width
- * @prop {Number} height
- * @prop {Boolean} [isDraggable=true]
- */
-
-/**
- * Defines coordinates object
- *
- * @typedef {Object} coordinates
- * @prop {Number} x
- * @prop {Number} y
- */
-
 (function (svgext) {
     'use strict';
 
-    svgext.SVGRect = inherit([svgext.SVGElement, svgext.SVGDraggable], {
+    /**
+     * Defines rectangle constructor options
+     *
+     * @typedef {Object} rectOpts
+     * @prop {Number} x
+     * @prop {Number} y
+     * @prop {Number} width
+     * @prop {Number} height
+     * @prop {Boolean} [isDraggable=true]
+     */
+
+    /**
+     * Defines coordinates object
+     *
+     * @typedef {Object} coordinates
+     * @prop {Number} x
+     * @prop {Number} y
+     */
+
+    /**
+     * Defines resolution object
+     *
+     * @typedef {Object} resolution
+     * @prop {Number} width
+     * @prop {Number} height
+     */
+
+    svgext.SVGRect = inherit([svgext.SVGElement, svgext.SVGDraggable], /** @lends svgext.SVGRect.prototype  */ {
 
         /**
-         * SVGRect class constructor
+         * Creates svgext.SVGRect instance
          *
+         * @constructs svgext.SVGRect
+         * @classdesc Rectangle
+         * @augments svgext.SVGElement
+         * @mixes svgext.SVGDraggable
          * @param {rectOpts} [opts]
-         * @constructor
          */
         __constructor: function (opts) {
             if (!opts) {
@@ -931,9 +955,7 @@ window.svgext = (function () {
          * Rectangle value getter
          *
          * @param {Boolean} [relative=false] Returns relative coordinates if true
-         * @returns {Object} resolution
-         * @returns {Number} resolution.width
-         * @returns {Number} resolution.height
+         * @returns {resolution}
          */
         getValue: function (relative) {
             var result = {
@@ -962,26 +984,26 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines CartesianGeometryMath class
- *
- * @name CartesianGeometryMath
- */
-
-/**
- * @typedef {Array} Point
- * @prop {Number} Point[0] X coordinate
- * @prop {Number} Point[1] Y coordinate
- */
-
-/**
- * @typedef {Array} LineSegment
- * @prop {Point} LineSegment[0]
- * @prop {Point} LineSegment[1]
- */
 (function (svgext) {
     'use strict';
 
+    /**
+     * @typedef {Array} Point
+     * @prop {Number} Point[0] X coordinate
+     * @prop {Number} Point[1] Y coordinate
+     */
+
+    /**
+     * @typedef {Array} LineSegment
+     * @prop {Point} LineSegment[0]
+     * @prop {Point} LineSegment[1]
+     */
+
+    /**
+     * Static class provides methods to work with lines in a cartesian coordinates
+     *
+     * @namespace svgext.CartesianGeometryMath
+     */
     svgext.CartesianGeometryMath = {
 
         /**
@@ -1034,18 +1056,28 @@ window.svgext = (function () {
          * @returns {Number}
          */
         findPolygonInsertIndex: function (polygonPoints, point) {
-            var smallestDistance = 10000,
+            var smallestDistance = Number.POSITIVE_INFINITY,
+                lineSegments = this.generateLineSegments(polygonPoints),
                 result;
 
-            // Findind the nearest pair
-            this.generateLineSegments(polygonPoints).forEach(function (lineSegment, index) {
-                var distance = this.distanceBtwTwoPoints(
-                    this.lineSegmentMidPoint(lineSegment),
-                    point
-                );
+            // Finds the nearest pair
+            lineSegments.forEach(function (lineSegment, index) {
+                var midpoint = this.lineSegmentMidPoint(lineSegment),
+                    distance = this.distanceBtwTwoPoints(midpoint, point);
+
                 if (smallestDistance > distance) {
-                    smallestDistance = distance;
-                    result = index + 1;
+                    // Checks if a new point won't create a complex polygon
+                    var tmpSegments = lineSegments.slice(), intersection;
+
+                    tmpSegments.splice(index, 1);
+                    intersection = tmpSegments.some(function (ls) {
+                        return this.checkLinesIntersection(ls, [midpoint, point]);
+                    }, this);
+
+                    if (!intersection) {
+                        smallestDistance = distance;
+                        result = index + 1;
+                    }
                 }
             }, this);
 
@@ -1056,8 +1088,8 @@ window.svgext = (function () {
         /**
          * Generates line segments array based on passed coordinates
          *
-         * @param {[Number]} points polygon vertexes coordinates
-         * @returns {[LineSegment]}
+         * @param {Array.<Number>} points polygon vertexes coordinates
+         * @returns {Array.<LineSegment>}
          */
         generateLineSegments: function (points) {
             var lineSegments = [];
@@ -1093,34 +1125,31 @@ window.svgext = (function () {
     };
 }(svgext));
 
-/**
- * Defines SVGPolygonVertex
- *
- * @name SVGPolygonVertex
- */
-
-/**
- * Defines rectangle constructor options
- *
- * @typedef {Object} vertexOpts
- * @prop {Number} x
- * @prop {Number} y
- * @prop {Number} width
- * @prop {Number} height
- * @prop {Boolean} [isDraggable=true]
- * @prop {SVGPolygon} polygon
- */
-
 (function (svgext) {
     'use strict';
 
-    svgext.SVGPolygonVertex = inherit(svgext.SVGRect, {
+    /**
+     * Defines rectangle constructor options
+     *
+     * @typedef {Object} vertexOpts
+     * @prop {Number} x
+     * @prop {Number} y
+     * @prop {Number} width
+     * @prop {Number} height
+     * @prop {Boolean} [isDraggable=true]
+     * @prop {SVGPolygon} polygon
+     */
+
+    svgext.SVGPolygonVertex = inherit(svgext.SVGRect, /** @lends svgext.SVGPolygonVertex.prototype*/ {
 
         /**
-         * Creates new SVGPolygonVertex instance
+         * Creates svgext.SVGPolygonVertex
          *
-         * @param {vertexOpts} opts
-         * @constructor
+         * @constructs svgext.SVGPolygonVertex
+         * @classdesc Defines polygon vertex controls class
+         * @augments svgext.SVGRect
+         * @param {vertexOpts} [opts]
+         * @private
          */
         __constructor: function (opts) {
             opts = opts ? opts : {isDraggable: true};
@@ -1213,30 +1242,31 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines SVGPolygon class
- *
- * @name SVGPolygon
- */
-
-/**
- * Defines polygon constructor options
- *
- * @typedef {Object} polygonOpts
- * @prop {Array} points
- * @prop {String} [cssClass='svg-polygon'] CSS classes separated by space
- * @prop {Boolean} [isDraggable=true]
- */
 (function (svgext) {
     'use strict';
 
-    svgext.SVGPolygon = inherit([svgext.SVGElement, svgext.SVGBlock, svgext.SVGDraggable], {
+    /**
+     * Defines polygon constructor options
+     *
+     * @typedef {Object} polygonOpts
+     * @prop {Array} points
+     * @prop {String} [cssClass='svg-polygon'] CSS classes separated by space
+     * @prop {Boolean} [isDraggable=true]
+     */
+
+    var mixes = [svgext.SVGElement, svgext.SVGBlock, svgext.SVGDraggable];
+
+    svgext.SVGPolygon = inherit(mixes, /** @lends svgext.SVGPolygon.prototype*/ {
 
         /**
-         * SVGPolygon class constructor
+         * Creates svgext.SVGPolygon instance
          *
+         * @constructs svgext.SVGPolygon
+         * @classdesc Defines polygon class
+         * @augments svgext.SVGElement
+         * @mixes svgext.SVGBlock
+         * @mixes svgext.SVGDraggable
          * @param {polygonOpts} [opts]
-         * @constructor
          */
         __constructor: function (opts) {
             opts = opts || {};
@@ -1533,35 +1563,32 @@ window.svgext = (function () {
 
 }(svgext));
 
-/**
- * Defines SVGRectControls
- *
- * @name SVGRectControls
- */
-
-/**
- * Defines rectangle constructor options
- *
- * @typedef {Object} controlsOpts
- * @param {Number} x
- * @prop {Number} y
- * @prop {Number} width
- * @prop {Number} height
- * @prop {('vertical' | 'horizontal')} type
- * @prop {Boolean} [isDraggable=true]
- * @prop {SVGPolygon} polygon
- */
-
 (function (svgext) {
     'use strict';
 
-    svgext.SVGRectControls = inherit(svgext.SVGRect, {
+    /**
+     * Defines rectangle constructor options
+     *
+     * @typedef {Object} controlsOpts
+     * @param {Number} x
+     * @prop {Number} y
+     * @prop {Number} width
+     * @prop {Number} height
+     * @prop {('vertical' | 'horizontal')} type
+     * @prop {Boolean} [isDraggable=true]
+     * @prop {SVGPolygon} polygon
+     */
+
+    svgext.SVGRectControls = inherit(svgext.SVGRect, /** @lends svgext.SVGRectControls.prototype*/ {
 
         /**
-         * Creates new SVGRectControls instance
+         * Creates svgext.SVGRectControls
          *
-         * @param {controlsOpts} opts
-         * @constructor
+         * @constructs svgext.SVGRectControls
+         * @classdesc Defines resizable rectangle controls class
+         * @augments svgext.SVGRect
+         * @param {controlsOpts} [opts]
+         * @private
          */
         __constructor: function (opts) {
             if (!opts.type) {
@@ -1614,33 +1641,33 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines SVGResizableRect
- *
- * @name SVGResizableRect
- */
-
-/**
- * Defines rectangle constructor options
- *
- * @typedef {Object} rectOpts
- * @prop {Number} x
- * @prop {Number} y
- * @prop {Number} width
- * @prop {Number} height
- * @prop {String} [cssClass='svg-resizable-rectangle'] CSS classes separated by space
- * @prop {Boolean} [isDraggable=true]
- */
 (function (svgext) {
     'use strict';
 
-    svgext.SVGResizableRect = inherit([svgext.SVGRect, svgext.SVGBlock], {
+    /**
+     * Defines rectangle constructor options
+     *
+     * @typedef {Object} rectOpts
+     * @prop {Number} x
+     * @prop {Number} y
+     * @prop {Number} width
+     * @prop {Number} height
+     * @prop {String} [cssClass='svg-resizable-rectangle'] CSS classes separated by space
+     * @prop {Boolean} [isDraggable=true]
+     */
+
+    var mixes = [svgext.SVGRect, svgext.SVGBlock];
+
+    svgext.SVGResizableRect = inherit(mixes, /** @lends svgext.SVGResizableRect.prototype*/ {
 
         /**
-         * SVGResizableRect class constructor
+         * Creates svgext.SVGResizableRect instance
          *
-         * @param {rectOpts} opts
-         * @constructor
+         * @constructs svgext.SVGResizableRect
+         * @classdesc Defines resizable rectangle class
+         * @augments svgext.SVGRect
+         * @mixes svgext.SVGBlock
+         * @param {rectOpts} [opts]
          */
         __constructor: function (opts) {
             if (!(opts.width && opts.height && opts.x && opts.y)) {
@@ -1812,22 +1839,18 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines SVGBorder
- *
- * @name SVGBorderedRect
- * @namespace Services
- */
-
 (function (svgext) {
     'use strict';
 
-    svgext.SVGBorder = inherit(svgext.SVGElement, {
+    svgext.SVGBorder = inherit(svgext.SVGElement, /** @lends svgext.SVGBorder.prototype*/ {
 
         /**
-         * SVGBorder class constructor
+         * Creates svgext.SVGBorder
          *
-         * @constructor
+         * @constructs svgext.SVGBorder
+         * @classdesc Defines border class for svgext.SVGBorderedRect
+         * @augments svgext.SVGElement
+         * @private
          */
         __constructor: function () {
             this.__base({
@@ -1869,27 +1892,25 @@ window.svgext = (function () {
 
 }(svgext));
 
-/**
- * Defines SVGBorderControl
- *
- * @name SVGBorderControl
- */
 (function (svgext) {
     'use strict';
 
-    svgext.SVGBorderControl = inherit(svgext.SVGRect, {
+    svgext.SVGBorderControl = inherit(svgext.SVGRect, /** @lends svgext.SVGBorderControl.prototype*/ {
 
         /**
-         * Creates new SVGBorderControl instance
+         * Creates svgext.SVGBorderControl
          *
-         * @constructor
+         * @constructs svgext.SVGBorderControl
+         * @classdesc Defines bordered rectangle controls class
+         * @augments svgext.SVGRect
+         * @private
          */
         __constructor: function () {
             this.__base({
                 cssClass: 'svg-border-control',
                 isDraggable: true,
                 width: svgext.default.control.width,
-                height: svgext.default.control.height
+                height: svgext.default.control.width
             });
 
             if (svgext._isTouchDevice) {
@@ -1961,40 +1982,38 @@ window.svgext = (function () {
     });
 }(svgext));
 
-/**
- * Defines SVGBorderedRect
- *
- * @name SVGBorderedRect
- */
-
-/**
- * Defines rectangle constructor options
- *
- * @typedef {Object} rectOpts
- * @prop {Number} x
- * @prop {Number} y
- * @prop {Number} width
- * @prop {Number} height
- * @prop {String} [cssClass='svg-bordered-rect'] CSS classes separated by space
- * @prop {String} [backgroundColor='#00d']
- * @prop {Boolean} [isDraggable=true]
- */
-
-/**
- * Defines axis
- *
- * @typedef {('x'|'y')} axis
- */
 (function (svgext) {
     'use strict';
 
-    svgext.SVGBorderedRect = inherit([svgext.SVGRect, svgext.SVGBlock], {
+    /**
+     * Defines rectangle constructor options
+     *
+     * @typedef {Object} rectOpts
+     * @prop {Number} x
+     * @prop {Number} y
+     * @prop {Number} width
+     * @prop {Number} height
+     * @prop {String} [cssClass='svg-bordered-rect'] CSS classes separated by space
+     * @prop {String} [backgroundColor='#00d']
+     * @prop {Boolean} [isDraggable=true]
+     */
+
+    /**
+     * Defines axis
+     *
+     * @typedef {('x'|'y')} axis
+     */
+
+    svgext.SVGBorderedRect = inherit([svgext.SVGRect, svgext.SVGBlock], /** @lends svgext.SVGBorderedRect.prototype*/ {
 
         /**
-         * SVGBorderedRect class constructor
+         * Creates svgext.SVGBorderedRect instance
          *
+         * @constructs svgext.SVGBorderedRect
+         * @classdesc Defines bordered rectangle
+         * @augments svgext.SVGRect
+         * @mixes svgext.SVGBlock
          * @param {rectOpts} [opts]
-         * @constructor
          */
         __constructor: function (opts) {
             if (!(opts.width && opts.height && opts.x && opts.y)) {
