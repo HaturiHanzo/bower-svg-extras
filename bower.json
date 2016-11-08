@@ -2,13 +2,24 @@
   "name": "svg-extras",
   "description": "Extends basic svg figures",
   "main": [
-    "dist/svg-extras.js",
-    "dist/svg-extras.css"
+    "dist/svg-extras.min.js",
+    "dist/svg-extras.min.css"
   ],
   "moduleType": "globals",
   "license": "MIT",
   "ignore": [
-    ".gitignore"
+    ".idea",
+    ".bowerrc",
+    ".gitignore",
+    ".jscsrc",
+    ".jshintrc",
+    "npm-debug.log",
+    "package.json",
+    "bower_components",
+    "node_modules",
+    "gulpfile.js",
+    "karma.config.js",
+    "src"
   ],
   "keywords": [
     "SVG",
@@ -23,9 +34,6 @@
   "authors": [
     "Roman Mishchenko <mishchenkoroman95@gmail.com>"
   ],
-  "homepage": "https://github.com/HaturiHanzo/bower-svg-extras",
-  "repository": "https://github.com/HaturiHanzo/bower-svg-extras.git",
-  "dependencies": {
-    "inherit": "dfilatov/inherit#2.2.4"
-  }
+  "homepage": "https://github.com/HaturiHanzo/svg-extras",
+  "repository": "https://github.com/HaturiHanzo/svg-extras"
 }

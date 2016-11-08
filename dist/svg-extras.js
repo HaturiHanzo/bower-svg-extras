@@ -1,6 +1,10 @@
 (function (global) {
     'use strict';
 
+    if (!EventEmitter) {
+        throw new Error('Svg-extras requires https://github.com/primus/eventemitter3');
+    }
+
     if (!inherit) {
         throw new Error('Svg-extras requires https://github.com/dfilatov/inherit');
     }
@@ -102,8 +106,11 @@
          * @param {String|SVGSVGElement} tag
          */
         __constructor: function (opts, tag) {
-            this.rootNode = this.node = typeof tag === 'string' ? this.createElem(tag) : tag;
             opts = opts || {};
+
+            this.rootNode = this.node = typeof tag === 'string' ? this.createElem(tag) : tag;
+            this._ee = new EventEmitter();
+
             if (opts.cssClass) {
                 this.addClass(opts.cssClass);
             }
@@ -189,12 +196,15 @@
          *
          * @param {String} key
          * @param {String} [value]
+         * @emits svgext.SVGElement#change[ATTR_NAME]
          * @returns {SVGElement}
          */
         attr: function (key, value) {
             if (value === undefined) {
                 return this.node.getAttribute(key);
             }
+
+            this.emit('change.' + key, value);
             this.node.setAttribute(key, value);
 
             return this;
@@ -217,11 +227,13 @@
         /**
          * Adds an active class
          *
+         * @emits svgext.SVGElement#activated
          * @returns {SVGElement}
          */
         activate: function () {
             this.isActive = true;
             this.addClass('active');
+            this.emit('activated');
 
             return this;
         },
@@ -229,10 +241,12 @@
         /**
          * Removes an active class
          *
+         * @emits svgext.SVGElement#deactivated
          * @returns {SVGElement}
          */
         deactivate: function () {
             this.isActive = false;
+            this.emit('deactivated');
 
             return this.removeClass('active');
         },
@@ -245,9 +259,23 @@
          * @returns {SVGElement}
          */
         on: function (type, listener) {
-            this.node.addEventListener(type, listener);
+            if (('on' + type) in this.node) {
+                this.node.addEventListener(type, listener);
+            } else {
+                this._ee.on(type, listener);
+            }
 
             return this;
+        },
+
+        /**
+         * Emits custom event on the element
+         *
+         * @param {String} type
+         * @param {...*} arguments
+         */
+        emit: function () {
+            this._ee.emit.apply(this._ee, arguments);
         },
 
         /**
@@ -275,7 +303,6 @@
             return tap;
         },
 
-
         /**
          * Removes double tap event handler
          *
@@ -294,7 +321,11 @@
          * @returns {SVGElement}
          */
         off: function (type, listener) {
-            this.node.removeEventListener(type, listener);
+            if (('on' + type) in this.node) {
+                this.node.removeEventListener(type, listener);
+            } else {
+                this._ee.removeListener(type, listener);
+            }
 
             return this;
         },
